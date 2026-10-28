@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Modules</title>
+</head>
+<body>
+  <main>
+    <h1>Modules</h1>
+    <ul id="module-list" aria-live="polite"></ul>
+    <p id="status" role="status">Loading modules...</p>
+  </main>
+
+  <script>
+    const list = document.querySelector('#module-list');
+    const status = document.querySelector('#status');
+
+    function moduleUrl(path) {
+      const segments = path.split('/');
+      if (segments.some(segment => !segment || segment === '.' || segment === '..')) {
+        return null;
+      }
+      return `/modules/${segments.map(encodeURIComponent).join('/')}`;
+    }
+
+    fetch('/modules/modules.json')
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Module manifest could not be loaded.');
+        }
+        return response.json();
+      })
+      .then(modules => {
+        if (!Array.isArray(modules)) {
+          throw new Error('Module manifest must contain a JSON array.');
+        }
+
+        const validModules = modules.filter(module =>
+          module && typeof module.title === 'string' && typeof module.path === 'string'
+        );
+
+        validModules.forEach(module => {
+          const href = moduleUrl(module.path);
+          if (!href) {
+            return;
+          }
+
+          const item = document.createElement('li');
+          const link = document.createElement('a');
+          link.href = href;
+          link.textContent = module.title;
+          item.append(link);
+          list.append(item);
+        });
+
+        status.textContent = list.children.length
+          ? ''
+          : 'No modules are available.';
+      })
+      .catch(() => {
+        status.textContent = 'Could not load modules. Check that /modules/modules.json is available.';
+      });
+  </script>
+</body>
+</html>

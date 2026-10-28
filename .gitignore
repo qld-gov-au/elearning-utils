@@ -1,0 +1,4 @@
+/modules/*/
+!/modules/modules.json
+*.zip
+.DS_Store
